@@ -1,0 +1,130 @@
+name: Validate and deploy PhotosArena
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: photosarena-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Lint, typecheck, tests
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Install development checks
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
+
+      - name: Lint Python
+        run: ruff check app tests
+
+      - name: Type check application
+        run: mypy app
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+  docker-build:
+    name: Build Linux image
+    runs-on: ubuntu-24.04
+    needs: validate
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build image
+        run: docker build --tag photosarena:ci .
+
+  publish:
+    name: Push image to GHCR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build and push immutable commit tag
+        id: image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/queryplanner/photosarena"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+          unset GHCR_TOKEN
+          docker build --tag "$image:${GITHUB_SHA}" .
+          docker push "$image:${GITHUB_SHA}"
+          digest_ref="$(docker image inspect "$image:${GITHUB_SHA}" --format '{{index .RepoDigests 0}}')"
+          case "$digest_ref" in
+            "$image@sha256:"*) ;;
+            *) echo "Docker did not return an immutable GHCR digest" >&2; exit 1 ;;
+          esac
+          echo "image=$digest_ref" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy protected main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    needs:
+      - validate
+      - docker-build
+      - publish
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Join Tailscale
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4.2.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: 100.124.202.79
+
+      - name: Configure repository deployment key
+        env:
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > "$HOME/.ssh/photosarena_deploy"
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/photosarena_deploy" "$HOME/.ssh/known_hosts"
+
+      - name: Deploy image by digest and check health
+        env:
+          DEPLOY_IMAGE: ${{ needs.publish.outputs.image }}
+          GHCR_PULL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GHCR_PULL_TOKEN" | ssh \
+            -i "$HOME/.ssh/photosarena_deploy" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            appuser@100.124.202.79 \
+            "deploy $DEPLOY_IMAGE $GHCR_USERNAME"

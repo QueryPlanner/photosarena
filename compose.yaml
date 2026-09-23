@@ -1,0 +1,47 @@
+services:
+  app:
+    image: ${PHOTOSARENA_IMAGE:-photosarena:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    read_only: true
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /data/photosarena.sqlite3
+      PHOTO_MANIFEST_PATH: /app/photo-manifest.json
+      PORT: "8000"
+    volumes:
+      - photosarena_data:/data
+    ports:
+      - "127.0.0.1:${PHOTOSARENA_HOST_PORT:-8182}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 8s
+    stop_grace_period: 10s
+    pids_limit: 80
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  photosarena_data:
+    name: photosarena_data

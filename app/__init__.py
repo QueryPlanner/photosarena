@@ -1,0 +1,1 @@
+"""PhotosArena application package."""
