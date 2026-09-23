@@ -89,9 +89,11 @@ local fake HTTP endpoint; they never call Cloudflare.
 
 The GitHub workflow validates pull requests, builds a Linux image, and on a
 push to `main` publishes the image to GHCR by commit and deploys that digest.
-The deployment job uses a protected `production` environment. Configure
-`main` protection to require the PR review and the `validate` and
-`docker-build` checks before merge.
+The deployment job targets the GitHub `production` environment. Configure
+`main` protection to require a pull request review and the `validate` and
+`docker-build` checks before merge. If deployments should also require an
+environment approval, add required reviewers and branch restrictions to the
+`production` environment in repository settings.
 
 Create these as repository Actions secrets after the repositories are
 available and access is configured:
