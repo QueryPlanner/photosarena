@@ -62,7 +62,7 @@ class FrontendStyleTests(unittest.TestCase):
         self.assertIn("overflow: hidden;", shell)
         self.assertIn("grid-template-columns: minmax(0, 1fr);", choices)
         self.assertIn("grid-template-rows: repeat(2, minmax(0, 1fr));", choices)
-        self.assertIn("gap: 2px;", choices)
+        self.assertIn("gap: 0;", choices)
         self.assertIn("body.arena-active .site-header", stylesheet)
         self.assertIn("body.arena-active .site-footer", stylesheet)
 
@@ -71,13 +71,83 @@ class FrontendStyleTests(unittest.TestCase):
         javascript = JAVASCRIPT.read_text(encoding="utf-8")
         image = css_rule(stylesheet, "body.arena-active .photo-choice__image")
         backdrop = css_rule(stylesheet, "body.arena-active .photo-choice__backdrop")
-        frame = css_rule(stylesheet, "body.arena-active .photo-choice__frame")
         progress = css_rule(stylesheet, "body.arena-active .progress-fill")
         self.assertIn("object-fit: contain;", image)
         self.assertIn("object-fit: cover;", backdrop)
         self.assertIn('backdrop.className = "photo-choice__backdrop";', javascript)
-        self.assertIn("border: 1px solid", frame)
         self.assertIn("background: #54e68a;", progress)
+
+    def test_borderless_photos_keep_a_visible_pressed_and_focus_state(self) -> None:
+        stylesheet = STYLESHEET.read_text(encoding="utf-8")
+        javascript = JAVASCRIPT.read_text(encoding="utf-8")
+        face = css_rule(stylesheet, "body.arena-active .photo-choice__face")
+        pressed = css_rule(
+            stylesheet,
+            "body.arena-active .photo-choice.is-selected .photo-choice__face",
+        )
+        focus = css_rule(stylesheet, "body.arena-active .photo-choice:focus-visible")
+        self.assertNotIn("photo-choice__frame", javascript)
+        self.assertNotIn("photo-choice__frame", stylesheet)
+        self.assertIn("border: 0;", face)
+        self.assertIn("transform: scale(0.985);", pressed)
+        self.assertIn("filter: brightness(0.78)", pressed)
+        self.assertIn("outline: 4px solid #54e68a;", focus)
+
+    def test_lightning_divider_is_decorative_and_does_not_split_the_grid(self) -> None:
+        html = HTML.read_text(encoding="utf-8")
+        stylesheet = STYLESHEET.read_text(encoding="utf-8")
+        svg = re.search(r'<svg\s+class="arena-lightning".*?</svg>', html, flags=re.DOTALL)
+        self.assertIsNotNone(svg, "The arena needs a lightning divider.")
+        assert svg is not None
+        self.assertIn('aria-hidden="true"', svg.group(0))
+        self.assertIn('focusable="false"', svg.group(0))
+        self.assertIn('id="arena-lightning-trace"', svg.group(0))
+        self.assertEqual(svg.group(0).count('href="#arena-lightning-trace"'), 3)
+        lightning = css_rule(stylesheet, "body.arena-active .arena-lightning")
+        choices = css_rule(stylesheet, "body.arena-active .choices")
+        self.assertIn("position: absolute;", lightning)
+        self.assertIn("pointer-events: none;", lightning)
+        self.assertIn("gap: 0;", choices)
+
+    def test_confetti_runs_only_when_results_render_and_respects_reduced_motion(self) -> None:
+        stylesheet = STYLESHEET.read_text(encoding="utf-8")
+        javascript = JAVASCRIPT.read_text(encoding="utf-8")
+        render_results = re.search(
+            r"function renderResults\(results\) \{.*?\n\}", javascript, flags=re.DOTALL
+        )
+        render_game = re.search(
+            r"function renderGame\(game\) \{.*?\n\}", javascript, flags=re.DOTALL
+        )
+        start_game = re.search(
+            r"async function startGame\(\) \{.*?\n\}", javascript, flags=re.DOTALL
+        )
+        self.assertIsNotNone(render_results)
+        self.assertIsNotNone(render_game)
+        self.assertIsNotNone(start_game)
+        assert render_results is not None and render_game is not None and start_game is not None
+        self.assertIn("celebrateRanking();", render_results.group(0))
+        self.assertNotIn("celebrateRanking();", render_game.group(0))
+        self.assertIn("clearCelebration();", start_game.group(0))
+        self.assertIn('window.matchMedia("(prefers-reduced-motion: reduce)")', javascript)
+        self.assertIn('piece.addEventListener("animationend"', javascript)
+        self.assertIn("window.setTimeout(clearCelebration, 1900)", javascript)
+        self.assertIn("@keyframes confetti-fall", stylesheet)
+        self.assertIn("@keyframes confetti-reduced", stylesheet)
+
+    def test_vote_loader_waits_briefly_for_photo_press_feedback(self) -> None:
+        javascript = JAVASCRIPT.read_text(encoding="utf-8")
+        submit_vote = re.search(
+            r"async function submitPendingVote\(\) \{.*?\n\}", javascript, flags=re.DOTALL
+        )
+        self.assertIsNotNone(submit_vote)
+        assert submit_vote is not None
+        body = submit_vote.group(0)
+        self.assertIn("}, 150);", body)
+        self.assertIn("const pressFeedback = new Promise", body)
+        self.assertEqual(body.count("await pressFeedback;"), 2)
+        self.assertIn("if (requestInFlight) show(loadingView);", body)
+        self.assertIn("window.clearTimeout(loadingTimer);", body)
+        self.assertLess(body.index("window.setTimeout"), body.index('requestJson("/api/votes"'))
 
 
 if __name__ == "__main__":

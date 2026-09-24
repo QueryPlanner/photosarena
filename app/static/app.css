@@ -134,6 +134,7 @@ h1 {
 }
 
 .choices {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
@@ -196,16 +197,6 @@ h1 {
   height: 100%;
   object-fit: contain;
   background: linear-gradient(145deg, #dad8d0, #eeece5 48%, #cfcec7);
-}
-
-.photo-choice__frame {
-  position: absolute;
-  z-index: 1;
-  inset: 9px;
-  pointer-events: none;
-  border: 1px solid rgb(255 255 255 / 82%);
-  border-radius: 10px;
-  box-shadow: 0 0 0 1px rgb(30 30 30 / 16%);
 }
 
 .photo-choice:hover:not(:disabled) .photo-choice__face {
@@ -408,10 +399,6 @@ h1 {
     height: calc(clamp(145px, 27svh, 235px) + 6px);
   }
 
-  .photo-choice__frame {
-    inset: 7px;
-  }
-
   .action-button {
     width: 100%;
     min-height: 60px;
@@ -541,15 +528,16 @@ body.arena-active .progress-fill {
 }
 
 body.arena-active .choices {
+  position: relative;
   display: grid;
   width: 100%;
   min-height: 0;
   flex: 1 1 auto;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 2px;
+  gap: 0;
   margin: 0;
-  background: #f5f5f0;
+  background: #101110;
 }
 
 body.arena-active .photo-choice {
@@ -570,6 +558,7 @@ body.arena-active .photo-choice__face {
   border-radius: 0;
   background: #161816;
   transform: none;
+  transition: transform 100ms ease-out, filter 100ms ease-out;
 }
 
 body.arena-active .photo-choice__backdrop {
@@ -593,33 +582,136 @@ body.arena-active .photo-choice__image {
   background: transparent;
 }
 
-body.arena-active .photo-choice__frame {
-  inset: 9px;
-  border: 1px solid rgb(255 255 255 / 78%);
-  border-radius: 0;
-  box-shadow: 0 0 0 1px rgb(20 20 20 / 34%);
+body.arena-active .arena-lightning {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: clamp(30px, 8vw, 54px);
+  overflow: visible;
+  pointer-events: none;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 7px rgb(64 231 255 / 72%));
 }
 
-body.arena-active .photo-choice:hover:not(:disabled) .photo-choice__face,
+body.arena-active .arena-lightning__ink {
+  fill: none;
+  stroke: #191522;
+  stroke-linecap: square;
+  stroke-linejoin: bevel;
+  stroke-width: 15px;
+}
+
+body.arena-active .arena-lightning__electric {
+  fill: none;
+  stroke: #4bdfff;
+  stroke-linecap: square;
+  stroke-linejoin: bevel;
+  stroke-width: 10px;
+}
+
+body.arena-active .arena-lightning__core {
+  fill: none;
+  stroke: #fff07a;
+  stroke-linecap: square;
+  stroke-linejoin: bevel;
+  stroke-width: 4px;
+}
+
+body.arena-active .arena-lightning__bolt {
+  fill: #ffe84a;
+  stroke: #191522;
+  stroke-linejoin: bevel;
+  stroke-width: 4px;
+}
+
 body.arena-active .photo-choice:active:not(:disabled) .photo-choice__face,
 body.arena-active .photo-choice.is-selected .photo-choice__face {
-  border-color: transparent;
-  transform: none;
-}
-
-body.arena-active .photo-choice:active:not(:disabled) .photo-choice__frame,
-body.arena-active .photo-choice.is-selected .photo-choice__frame {
-  border: 3px solid #54e68a;
+  filter: brightness(0.78) saturate(0.92);
+  transform: scale(0.985);
 }
 
 body.arena-active .photo-choice:focus-visible {
   z-index: 2;
-  outline: 4px solid #ffffff;
+  outline: 4px solid #54e68a;
   outline-offset: -5px;
+}
+
+.arena-lightning {
+  display: none;
+}
+
+.ranking-confetti {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -14px;
+  display: block;
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-fall var(--confetti-duration) cubic-bezier(0.2, 0.65, 0.4, 1)
+    var(--confetti-delay) both;
+}
+
+.confetti-piece--dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -4vh, 0) rotate(0deg);
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.82;
+    transform: translate3d(var(--confetti-drift), 108dvh, 0) rotate(var(--confetti-spin));
+  }
+}
+
+@keyframes confetti-reduced {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.82;
+  }
 }
 
 body.arena-active .message-view {
   margin: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.arena-active .photo-choice:active:not(:disabled) .photo-choice__face,
+  body.arena-active .photo-choice.is-selected .photo-choice__face {
+    transform: none;
+  }
+
+  .ranking-confetti .confetti-piece {
+    animation-name: confetti-reduced;
+    animation-duration: 150ms !important;
+    animation-delay: 0ms !important;
+    transform: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

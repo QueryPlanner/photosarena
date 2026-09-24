@@ -30,7 +30,21 @@
           <p class="visually-hidden" id="round-label">ROUND 1 OF 5</p>
         </div>
 
-        <div class="choices" id="choices" aria-label="Choose a photo"></div>
+        <div class="choices" id="choices" aria-label="Choose a photo">
+          <svg
+            class="arena-lightning"
+            viewBox="0 0 1000 72"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <defs><path id="arena-lightning-trace" d="M0 36 L86 36 L104 29 L118 42 L136 18 L151 52 L168 34 L226 36 L246 14 L261 58 L279 23 L295 47 L312 32 L371 36 L391 15 L406 56 L425 22 L442 48 L459 33 L517 36 L537 12 L552 60 L571 22 L588 49 L605 33 L664 36 L684 14 L699 58 L718 22 L735 48 L752 32 L811 36 L831 15 L846 57 L865 22 L882 48 L899 33 L940 36 L957 29 L972 42 L989 24 L1000 36" /></defs>
+            <use href="#arena-lightning-trace" class="arena-lightning__ink" />
+            <use href="#arena-lightning-trace" class="arena-lightning__electric" />
+            <use href="#arena-lightning-trace" class="arena-lightning__core" />
+            <path class="arena-lightning__bolt" d="M509 4 L486 33 L511 32 L497 68 L535 27 L514 28 Z" />
+          </svg>
+        </div>
         <p id="game-status" class="visually-hidden" aria-live="polite"></p>
       </section>
 
@@ -52,6 +66,8 @@
         <ol id="ranking-list" class="ranking-list"></ol>
         <button class="action-button play-again" id="play-again" type="button">Play another five</button>
       </section>
+
+      <div id="ranking-confetti" class="ranking-confetti" aria-hidden="true"></div>
 
       <footer class="site-footer">
         <span>Photos are ranked by the crowd.</span>
