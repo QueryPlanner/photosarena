@@ -80,6 +80,7 @@ class FrontendStyleTests(unittest.TestCase):
     def test_borderless_photos_keep_a_visible_pressed_and_focus_state(self) -> None:
         stylesheet = STYLESHEET.read_text(encoding="utf-8")
         javascript = JAVASCRIPT.read_text(encoding="utf-8")
+        choice = css_rule(stylesheet, "body.arena-active .photo-choice")
         face = css_rule(stylesheet, "body.arena-active .photo-choice__face")
         pressed = css_rule(
             stylesheet,
@@ -88,6 +89,8 @@ class FrontendStyleTests(unittest.TestCase):
         focus = css_rule(stylesheet, "body.arena-active .photo-choice:focus-visible")
         self.assertNotIn("photo-choice__frame", javascript)
         self.assertNotIn("photo-choice__frame", stylesheet)
+        self.assertIn("border: 0;", choice)
+        self.assertIn("appearance: none;", choice)
         self.assertIn("border: 0;", face)
         self.assertIn("transform: scale(0.985);", pressed)
         self.assertIn("filter: brightness(0.78)", pressed)
@@ -101,12 +104,17 @@ class FrontendStyleTests(unittest.TestCase):
         assert svg is not None
         self.assertIn('aria-hidden="true"', svg.group(0))
         self.assertIn('focusable="false"', svg.group(0))
-        self.assertIn('id="arena-lightning-trace"', svg.group(0))
-        self.assertEqual(svg.group(0).count('href="#arena-lightning-trace"'), 3)
+        self.assertIn('viewBox="0 0 1000 180"', svg.group(0))
+        self.assertIn('id="arena-lightning-upper"', svg.group(0))
+        self.assertIn('id="arena-lightning-lower"', svg.group(0))
+        self.assertEqual(svg.group(0).count('href="#arena-lightning-upper"'), 3)
+        self.assertEqual(svg.group(0).count('href="#arena-lightning-lower"'), 3)
         lightning = css_rule(stylesheet, "body.arena-active .arena-lightning")
+        charge = css_rule(stylesheet, "body.arena-active .arena-lightning__charge")
         choices = css_rule(stylesheet, "body.arena-active .choices")
         self.assertIn("position: absolute;", lightning)
         self.assertIn("pointer-events: none;", lightning)
+        self.assertIn("stroke: #f13c49;", charge)
         self.assertIn("gap: 0;", choices)
 
     def test_confetti_runs_only_when_results_render_and_respects_reduced_motion(self) -> None:

@@ -33,16 +33,21 @@
         <div class="choices" id="choices" aria-label="Choose a photo">
           <svg
             class="arena-lightning"
-            viewBox="0 0 1000 72"
+            viewBox="0 0 1000 180"
             preserveAspectRatio="none"
             aria-hidden="true"
             focusable="false"
           >
-            <defs><path id="arena-lightning-trace" d="M0 36 L86 36 L104 29 L118 42 L136 18 L151 52 L168 34 L226 36 L246 14 L261 58 L279 23 L295 47 L312 32 L371 36 L391 15 L406 56 L425 22 L442 48 L459 33 L517 36 L537 12 L552 60 L571 22 L588 49 L605 33 L664 36 L684 14 L699 58 L718 22 L735 48 L752 32 L811 36 L831 15 L846 57 L865 22 L882 48 L899 33 L940 36 L957 29 L972 42 L989 24 L1000 36" /></defs>
-            <use href="#arena-lightning-trace" class="arena-lightning__ink" />
-            <use href="#arena-lightning-trace" class="arena-lightning__electric" />
-            <use href="#arena-lightning-trace" class="arena-lightning__core" />
-            <path class="arena-lightning__bolt" d="M509 4 L486 33 L511 32 L497 68 L535 27 L514 28 Z" />
+            <defs>
+              <path id="arena-lightning-upper" d="M-18 158 L72 141 L147 124 L213 116 L287 95 L351 82 L414 64 L477 48 L529 34 L548 13 L565 5 L547 34 L616 27 L681 18 L745 19 L809 10 L869 9 L1014 1" />
+              <path id="arena-lightning-lower" d="M-12 168 L81 149 L155 135 L222 119 L294 105 L357 89 L425 73 L489 57 L532 47 L510 68 L484 86 L474 100 L536 84 L612 68 L691 53 L770 36 L842 24 L1012 4" />
+            </defs>
+            <use href="#arena-lightning-upper" class="arena-lightning__ink" />
+            <use href="#arena-lightning-lower" class="arena-lightning__ink" />
+            <use href="#arena-lightning-upper" class="arena-lightning__charge" />
+            <use href="#arena-lightning-lower" class="arena-lightning__charge" />
+            <use href="#arena-lightning-upper" class="arena-lightning__shine" />
+            <use href="#arena-lightning-lower" class="arena-lightning__shine" />
           </svg>
         </div>
         <p id="game-status" class="visually-hidden" aria-live="polite"></p>
