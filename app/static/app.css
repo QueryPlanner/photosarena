@@ -13,6 +13,8 @@
   --lip: #2a2a2a;
   --line: #5a5a5a;
   --accent: #d6f25b;
+  --arena-green: #26a85f;
+  --arena-green-lip: #126238;
   --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -132,6 +134,7 @@ h1 {
 }
 
 .choices {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
@@ -184,22 +187,16 @@ h1 {
     transform 110ms var(--ease-out);
 }
 
+.photo-choice__backdrop {
+  display: none;
+}
+
 .photo-choice__image {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   background: linear-gradient(145deg, #dad8d0, #eeece5 48%, #cfcec7);
-}
-
-.photo-choice__frame {
-  position: absolute;
-  z-index: 1;
-  inset: 9px;
-  pointer-events: none;
-  border: 1px solid rgb(255 255 255 / 82%);
-  border-radius: 10px;
-  box-shadow: 0 0 0 1px rgb(30 30 30 / 16%);
 }
 
 .photo-choice:hover:not(:disabled) .photo-choice__face {
@@ -402,10 +399,6 @@ h1 {
     height: calc(clamp(145px, 27svh, 235px) + 6px);
   }
 
-  .photo-choice__frame {
-    inset: 7px;
-  }
-
   .action-button {
     width: 100%;
     min-height: 60px;
@@ -454,5 +447,282 @@ h1 {
   .photo-choice.is-selected .photo-choice__face,
   .photo-choice.is-selected .photo-choice__lip {
     transform: none;
+  }
+}
+
+.welcome-view {
+  width: min(100%, 680px);
+  margin: auto;
+  padding: 32px 18px;
+  text-align: center;
+  animation: settle-in 180ms var(--ease-out) both;
+}
+
+.welcome-view .supporting-copy {
+  margin: 14px auto 34px;
+  font-size: 17px;
+}
+
+.start-button {
+  min-width: 230px;
+  min-height: 64px;
+  background: var(--arena-green);
+  box-shadow: 0 6px 0 var(--arena-green-lip);
+  font-size: 22px;
+}
+
+.start-button:hover {
+  background: #218e52;
+}
+
+.start-button:active {
+  box-shadow: 0 1px 0 var(--arena-green-lip);
+}
+
+body.arena-active {
+  overflow: hidden;
+  background: #101110;
+}
+
+body.arena-active .app-shell {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  overflow: hidden;
+}
+
+body.arena-active .site-header,
+body.arena-active .site-footer {
+  display: none;
+}
+
+body.arena-active .game-view {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  animation: none;
+}
+
+body.arena-active .round-heading {
+  width: 100%;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+body.arena-active .progress-track {
+  height: 6px;
+  margin: 0;
+  border-radius: 0;
+  background: #414541;
+}
+
+body.arena-active .progress-fill {
+  background: #54e68a;
+}
+
+body.arena-active .choices {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  background: #101110;
+}
+
+body.arena-active .photo-choice {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  background: transparent;
+}
+
+body.arena-active .photo-choice__lip {
+  display: none;
+}
+
+body.arena-active .photo-choice__face {
+  inset: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #161816;
+  transform: none;
+  transition: transform 100ms ease-out, filter 100ms ease-out;
+}
+
+body.arena-active .photo-choice__backdrop {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(22px) brightness(0.42);
+  transform: scale(1.08);
+}
+
+body.arena-active .photo-choice__image {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+}
+
+body.arena-active .arena-lightning {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: clamp(42px, 11vw, 66px);
+  overflow: visible;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+body.arena-active .arena-lightning__ink {
+  fill: none;
+  stroke: #241822;
+  stroke-linecap: round;
+  stroke-linejoin: bevel;
+  stroke-width: 20px;
+}
+
+body.arena-active .arena-lightning__charge {
+  fill: none;
+  stroke: #f13c49;
+  stroke-linecap: round;
+  stroke-linejoin: bevel;
+  stroke-width: 13px;
+}
+
+body.arena-active .arena-lightning__shine {
+  fill: none;
+  stroke: #ffd5c9;
+  stroke-linecap: round;
+  stroke-linejoin: bevel;
+  stroke-width: 3px;
+}
+
+body.arena-active .photo-choice:active:not(:disabled) .photo-choice__face,
+body.arena-active .photo-choice.is-selected .photo-choice__face {
+  filter: brightness(0.78) saturate(0.92);
+  transform: scale(0.985);
+}
+
+body.arena-active .photo-choice:focus-visible {
+  z-index: 2;
+  outline: 4px solid #54e68a;
+  outline-offset: -5px;
+}
+
+.arena-lightning {
+  display: none;
+}
+
+.ranking-confetti {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -14px;
+  display: block;
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-fall var(--confetti-duration) cubic-bezier(0.2, 0.65, 0.4, 1)
+    var(--confetti-delay) both;
+}
+
+.confetti-piece--dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -4vh, 0) rotate(0deg);
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.82;
+    transform: translate3d(var(--confetti-drift), 108dvh, 0) rotate(var(--confetti-spin));
+  }
+}
+
+@keyframes confetti-reduced {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.82;
+  }
+}
+
+body.arena-active .message-view {
+  margin: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.arena-active .photo-choice:active:not(:disabled) .photo-choice__face,
+  body.arena-active .photo-choice.is-selected .photo-choice__face {
+    transform: none;
+  }
+
+  .ranking-confetti .confetti-piece {
+    animation-name: confetti-reduced;
+    animation-duration: 150ms !important;
+    animation-delay: 0ms !important;
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-view,
+  .game-view,
+  .results-view {
+    animation: none;
+  }
+
+  .action-button,
+  .photo-choice__face,
+  .progress-fill {
+    transition: none;
+  }
+
+  .loading-mark {
+    animation: none;
   }
 }
