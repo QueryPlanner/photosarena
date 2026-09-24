@@ -1,3 +1,4 @@
+const welcomeView = document.querySelector("#welcome-view");
 const gameView = document.querySelector("#game-view");
 const loadingView = document.querySelector("#loading-view");
 const errorView = document.querySelector("#error-view");
@@ -9,13 +10,14 @@ const progressFill = document.querySelector(".progress-fill");
 const gameStatus = document.querySelector("#game-status");
 const retryButton = document.querySelector("#retry-button");
 const playAgainButton = document.querySelector("#play-again");
+const startButton = document.querySelector("#start-button");
 
 let requestInFlight = false;
 let retryAction = null;
 let pendingVote = null;
 
 function show(view) {
-  for (const candidate of [gameView, loadingView, errorView, resultsView]) {
+  for (const candidate of [welcomeView, gameView, loadingView, errorView, resultsView]) {
     candidate.hidden = candidate !== view;
   }
 }
@@ -51,6 +53,12 @@ function makeChoice(choice, index, ballotId) {
   const face = document.createElement("span");
   face.className = "photo-choice__face";
 
+  const backdrop = document.createElement("img");
+  backdrop.className = "photo-choice__backdrop";
+  backdrop.src = choice.image_url;
+  backdrop.alt = "";
+  backdrop.setAttribute("aria-hidden", "true");
+
   const image = document.createElement("img");
   image.className = "photo-choice__image";
   image.src = choice.image_url;
@@ -62,7 +70,7 @@ function makeChoice(choice, index, ballotId) {
   innerFrame.className = "photo-choice__frame";
   innerFrame.setAttribute("aria-hidden", "true");
 
-  face.append(image, innerFrame);
+  face.append(backdrop, image, innerFrame);
   button.append(lip, face);
   button.addEventListener("click", () => choose(button, choice.id, ballotId));
   return button;
@@ -70,19 +78,25 @@ function makeChoice(choice, index, ballotId) {
 
 function renderGame(game) {
   requestInFlight = false;
+  document.body.classList.add("arena-active");
   show(gameView);
-  roundLabel.textContent = `ROUND ${game.round} OF ${game.total_rounds}`;
-  progress.setAttribute("aria-valuenow", String(game.round - 1));
-  progressFill.style.width = `${((game.round - 1) / game.total_rounds) * 100}%`;
-  gameStatus.textContent = `Round ${game.round} of ${game.total_rounds}. Choose one photo.`;
+  roundLabel.textContent = "ROUND " + game.round + " OF " + game.total_rounds;
+  progress.setAttribute("aria-valuemax", String(game.total_rounds));
+  progress.setAttribute("aria-valuenow", String(game.round));
+  progress.setAttribute("aria-valuetext", "Round " + game.round + " of " + game.total_rounds);
+  progressFill.style.width = (game.round / game.total_rounds) * 100 + "%";
+  gameStatus.textContent = "Round " + game.round + " of " + game.total_rounds + ". Choose one photo.";
   choicesNode.replaceChildren(
     ...game.choices.map((choice, index) => makeChoice(choice, index, game.ballot_id)),
   );
+  choicesNode.querySelector("button")?.focus({ preventScroll: true });
 }
 
 function renderResults(results) {
   requestInFlight = false;
+  document.body.classList.remove("arena-active");
   show(resultsView);
+  document.querySelector("#results-title").focus({ preventScroll: true });
   const list = document.querySelector("#ranking-list");
   list.replaceChildren(...results.ranking.slice(0, 10).map((item, index) => {
     const row = document.createElement("li");
@@ -112,11 +126,15 @@ function renderResults(results) {
 
 function showError(error) {
   requestInFlight = false;
+  document.body.classList.remove("arena-active");
   document.querySelector("#error-message").textContent = error.message;
   show(errorView);
+  document.querySelector("#error-title").focus({ preventScroll: true });
 }
 
 async function startGame() {
+  if (requestInFlight) return;
+  document.body.classList.remove("arena-active");
   retryAction = startGame;
   retryButton.textContent = "Try again";
   pendingVote = null;
@@ -164,8 +182,9 @@ async function submitPendingVote() {
   }
 }
 
+startButton.addEventListener("click", startGame);
 retryButton.addEventListener("click", () => {
   if (retryAction) retryAction();
 });
 playAgainButton.addEventListener("click", startGame);
-startGame();
+show(welcomeView);

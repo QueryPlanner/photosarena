@@ -16,34 +16,38 @@
         <span class="header-note">A crowd-powered photo ranking</span>
       </header>
 
-      <section id="game-view" class="game-view" aria-labelledby="prompt" hidden>
+      <section id="welcome-view" class="welcome-view" aria-labelledby="prompt">
+        <h1 id="prompt">Which photo do you prefer?</h1>
+        <p class="supporting-copy">Choose one. Your vote helps shape the crowd ranking.</p>
+        <button class="action-button start-button" id="start-button" type="button">Start</button>
+      </section>
+
+      <section id="game-view" class="game-view" aria-label="Choose the photo you prefer" hidden>
         <div class="round-heading">
-          <p class="eyebrow" id="round-label">ROUND 1 OF 5</p>
-          <div class="progress-track" role="progressbar" aria-label="Round progress" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+          <div id="round-progress" class="progress-track" role="progressbar" aria-label="Round progress" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-valuetext="Ready for round 1">
             <span class="progress-fill"></span>
           </div>
-          <h1 id="prompt">Which photo do you prefer?</h1>
-          <p class="supporting-copy">Choose one. Your vote helps shape the crowd ranking.</p>
+          <p class="visually-hidden" id="round-label">ROUND 1 OF 5</p>
         </div>
 
         <div class="choices" id="choices" aria-label="Choose a photo"></div>
         <p id="game-status" class="visually-hidden" aria-live="polite"></p>
       </section>
 
-      <section id="loading-view" class="message-view" aria-live="polite">
+      <section id="loading-view" class="message-view" aria-live="polite" hidden>
         <span class="loading-mark" aria-hidden="true"></span>
         <p>Loading today’s photos…</p>
       </section>
 
       <section id="error-view" class="message-view" hidden aria-labelledby="error-title">
-        <h1 id="error-title">We couldn’t load the next round.</h1>
+        <h1 id="error-title" tabindex="-1">We couldn’t load the next round.</h1>
         <p id="error-message">Check your connection and try again.</p>
         <button class="action-button" id="retry-button" type="button">Try again</button>
       </section>
 
       <section id="results-view" class="results-view" hidden aria-labelledby="results-title">
         <p class="eyebrow">FIVE ROUNDS COMPLETE</p>
-        <h1 id="results-title">The crowd ranking</h1>
+        <h1 id="results-title" tabindex="-1">The crowd ranking</h1>
         <p class="supporting-copy">Every position comes from votes cast by visitors.</p>
         <ol id="ranking-list" class="ranking-list"></ol>
         <button class="action-button play-again" id="play-again" type="button">Play another five</button>
