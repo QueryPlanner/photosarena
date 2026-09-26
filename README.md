@@ -62,15 +62,16 @@ the required R2 object-write permission:
 ```sh
 export CLOUDFLARE_ACCOUNT_ID='your-account-id'
 export CLOUDFLARE_API_TOKEN='read-from-your-secret-manager'
-export R2_BUCKET_NAME='photosarena'
+export R2_BUCKET_NAME='photosarena-images'
 python3 tools/upload_r2.py "$PWD/photos-web"
 cp photos-web/manifest.json photo-manifest.json
 ```
 
-Set `PHOTO_BASE_URL` in `.env` to the bucket's configured public domain. Do not
-commit `.env`, original images, or resized image files. The manifest is safe to
-commit: it contains hash-based IDs and object keys only. Verify that the bucket
-serves each object publicly before starting the app.
+Set `PHOTO_BASE_URL` in `.env` to
+`https://images.photosarena.lordpatil.com`. Do not commit `.env`, original
+images, or resized image files. The manifest is safe to commit: it contains
+hash-based IDs and object keys only. Verify that the bucket serves each object
+publicly before starting the app.
 
 ## Tests and checks
 

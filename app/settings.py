@@ -13,6 +13,7 @@ class Settings:
     photo_base_url: str
     owner_secret: str
     ballot_secret: str
+    host: str
     port: int
 
     @classmethod
@@ -26,6 +27,9 @@ class Settings:
         ballot_secret = os.environ.get("BALLOT_SECRET", "")
         if len(ballot_secret.encode("utf-8")) < 32:
             raise ValueError("BALLOT_SECRET must contain at least 32 bytes.")
+        host = os.environ.get("HOST", "127.0.0.1").strip()
+        if host not in {"127.0.0.1", "0.0.0.0"}:
+            raise ValueError("HOST must be 127.0.0.1 or 0.0.0.0.")
         port = int(os.environ.get("PORT", "8000"))
         if not 1 <= port <= 65535:
             raise ValueError("PORT must be between 1 and 65535.")
@@ -35,5 +39,6 @@ class Settings:
             photo_base_url=photo_base_url,
             owner_secret=owner_secret,
             ballot_secret=ballot_secret,
+            host=host,
             port=port,
         )
