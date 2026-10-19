@@ -84,7 +84,7 @@ class DeployScriptTests(unittest.TestCase):
     def run_deploy(self, image=None):
         image = image or IMAGE_PREFIX + "a" * 64
         return subprocess.run(
-            ["bash", str(DEPLOY), image],
+            ["/bin/bash", str(DEPLOY), image],
             input="short-lived-ghcr-token\n",
             capture_output=True,
             text=True,
@@ -239,7 +239,7 @@ class DeployScriptTests(unittest.TestCase):
 
     def test_empty_token_stops_before_registry_login(self):
         result = subprocess.run(
-            ["bash", str(DEPLOY), IMAGE_PREFIX + "a" * 64],
+            ["/bin/bash", str(DEPLOY), IMAGE_PREFIX + "a" * 64],
             input="\n",
             capture_output=True,
             text=True,
