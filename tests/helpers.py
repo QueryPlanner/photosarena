@@ -35,6 +35,7 @@ class AppFixture:
             photo_base_url="https://photos.example.test",
             owner_secret="owner-secret-for-tests-at-least-32-chars",
             ballot_secret="ballot-secret-for-tests-at-least-32-chars",
+            host="127.0.0.1",
             port=0,
         )
         connection = connect(self.database_path)

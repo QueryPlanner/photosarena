@@ -1,3 +1,4 @@
+const welcomeView = document.querySelector("#welcome-view");
 const gameView = document.querySelector("#game-view");
 const loadingView = document.querySelector("#loading-view");
 const errorView = document.querySelector("#error-view");
@@ -9,13 +10,16 @@ const progressFill = document.querySelector(".progress-fill");
 const gameStatus = document.querySelector("#game-status");
 const retryButton = document.querySelector("#retry-button");
 const playAgainButton = document.querySelector("#play-again");
+const startButton = document.querySelector("#start-button");
+const rankingConfetti = document.querySelector("#ranking-confetti");
 
 let requestInFlight = false;
 let retryAction = null;
 let pendingVote = null;
+let celebrationTimeout = 0;
 
 function show(view) {
-  for (const candidate of [gameView, loadingView, errorView, resultsView]) {
+  for (const candidate of [welcomeView, gameView, loadingView, errorView, resultsView]) {
     candidate.hidden = candidate !== view;
   }
 }
@@ -51,6 +55,12 @@ function makeChoice(choice, index, ballotId) {
   const face = document.createElement("span");
   face.className = "photo-choice__face";
 
+  const backdrop = document.createElement("img");
+  backdrop.className = "photo-choice__backdrop";
+  backdrop.src = choice.image_url;
+  backdrop.alt = "";
+  backdrop.setAttribute("aria-hidden", "true");
+
   const image = document.createElement("img");
   image.className = "photo-choice__image";
   image.src = choice.image_url;
@@ -58,11 +68,7 @@ function makeChoice(choice, index, ballotId) {
   image.loading = "eager";
   image.decoding = "async";
 
-  const innerFrame = document.createElement("span");
-  innerFrame.className = "photo-choice__frame";
-  innerFrame.setAttribute("aria-hidden", "true");
-
-  face.append(image, innerFrame);
+  face.append(backdrop, image);
   button.append(lip, face);
   button.addEventListener("click", () => choose(button, choice.id, ballotId));
   return button;
@@ -70,19 +76,56 @@ function makeChoice(choice, index, ballotId) {
 
 function renderGame(game) {
   requestInFlight = false;
+  document.body.classList.add("arena-active");
   show(gameView);
-  roundLabel.textContent = `ROUND ${game.round} OF ${game.total_rounds}`;
-  progress.setAttribute("aria-valuenow", String(game.round - 1));
-  progressFill.style.width = `${((game.round - 1) / game.total_rounds) * 100}%`;
-  gameStatus.textContent = `Round ${game.round} of ${game.total_rounds}. Choose one photo.`;
+  roundLabel.textContent = "ROUND " + game.round + " OF " + game.total_rounds;
+  progress.setAttribute("aria-valuemax", String(game.total_rounds));
+  progress.setAttribute("aria-valuenow", String(game.round));
+  progress.setAttribute("aria-valuetext", "Round " + game.round + " of " + game.total_rounds);
+  progressFill.style.width = (game.round / game.total_rounds) * 100 + "%";
+  gameStatus.textContent = "Round " + game.round + " of " + game.total_rounds + ". Choose one photo.";
   choicesNode.replaceChildren(
     ...game.choices.map((choice, index) => makeChoice(choice, index, game.ballot_id)),
+    choicesNode.querySelector(".arena-lightning"),
   );
+  choicesNode.querySelector("button")?.focus({ preventScroll: true });
+}
+
+function clearCelebration() {
+  window.clearTimeout(celebrationTimeout);
+  celebrationTimeout = 0;
+  rankingConfetti.replaceChildren();
+}
+
+function celebrateRanking() {
+  clearCelebration();
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  const colors = ["#54e68a", "#ffe04b", "#31d7ee", "#ff6b62", "#ad7bff"];
+  const pieces = Array.from({ length: 30 }, (_, index) => {
+    const piece = document.createElement("span");
+    piece.className = index % 4 === 0 ? "confetti-piece confetti-piece--dot" : "confetti-piece";
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.backgroundColor = colors[index % colors.length];
+    piece.style.setProperty("--confetti-drift", `${(Math.random() - 0.5) * 150}px`);
+    piece.style.setProperty("--confetti-spin", `${360 + Math.random() * 540}deg`);
+    piece.style.setProperty("--confetti-duration", `${1000 + Math.random() * 600}ms`);
+    piece.style.setProperty("--confetti-delay", `${Math.random() * 180}ms`);
+    piece.addEventListener("animationend", () => piece.remove(), { once: true });
+    return piece;
+  });
+
+  rankingConfetti.replaceChildren(...pieces);
+  celebrationTimeout = window.setTimeout(clearCelebration, 1900);
 }
 
 function renderResults(results) {
   requestInFlight = false;
+  document.body.classList.remove("arena-active");
   show(resultsView);
+  document.querySelector("#results-title").focus({ preventScroll: true });
   const list = document.querySelector("#ranking-list");
   list.replaceChildren(...results.ranking.slice(0, 10).map((item, index) => {
     const row = document.createElement("li");
@@ -108,15 +151,21 @@ function renderResults(results) {
     row.append(rank, image, label, score);
     return row;
   }));
+  celebrateRanking();
 }
 
 function showError(error) {
   requestInFlight = false;
+  document.body.classList.remove("arena-active");
   document.querySelector("#error-message").textContent = error.message;
   show(errorView);
+  document.querySelector("#error-title").focus({ preventScroll: true });
 }
 
 async function startGame() {
+  if (requestInFlight) return;
+  clearCelebration();
+  document.body.classList.remove("arena-active");
   retryAction = startGame;
   retryButton.textContent = "Try again";
   pendingVote = null;
@@ -146,26 +195,33 @@ async function choose(button, choiceId, ballotId) {
 async function submitPendingVote() {
   if (requestInFlight || !pendingVote) return;
   requestInFlight = true;
-  show(loadingView);
+  const pressFeedback = new Promise((resolve) => window.setTimeout(resolve, 100));
+  const loadingTimer = window.setTimeout(() => {
+    if (requestInFlight) show(loadingView);
+  }, 150);
 
   try {
     const response = await requestJson("/api/votes", {
       method: "POST",
       body: JSON.stringify(pendingVote),
     });
-    await new Promise((resolve) => window.setTimeout(resolve, 95));
+    window.clearTimeout(loadingTimer);
+    await pressFeedback;
     pendingVote = null;
     if (response.completed) renderResults(response);
     else renderGame(response);
   } catch (error) {
+    window.clearTimeout(loadingTimer);
+    await pressFeedback;
     retryAction = error.status === 410 ? startGame : submitPendingVote;
     retryButton.textContent = error.status === 410 ? "Start a new game" : "Retry this vote";
     showError(error);
   }
 }
 
+startButton.addEventListener("click", startGame);
 retryButton.addEventListener("click", () => {
   if (retryAction) retryAction();
 });
 playAgainButton.addEventListener("click", startGame);
-startGame();
+show(welcomeView);

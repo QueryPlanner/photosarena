@@ -186,12 +186,18 @@ def secrets_compare(first: str, second: str) -> bool:
     return hmac.compare_digest(first.encode("utf-8"), second.encode("utf-8"))
 
 
+def create_http_server(settings: Settings, service: PhotosArenaService) -> ThreadingHTTPServer:
+    server = ThreadingHTTPServer(
+        (settings.host, settings.port), make_handler(settings, service)
+    )
+    server.daemon_threads = True
+    return server
+
+
 def main() -> None:
     settings = Settings.from_environment()
     service = create_service(settings)
-    handler = make_handler(settings, service)
-    server = ThreadingHTTPServer(("0.0.0.0", settings.port), handler)
-    server.daemon_threads = True
+    server = create_http_server(settings, service)
     print(f"PhotosArena listening on port {settings.port}", flush=True)
     try:
         server.serve_forever()

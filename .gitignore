@@ -6,6 +6,7 @@ __pycache__/
 *.py[cod]
 .mypy_cache/
 .ruff_cache/
+.wrangler/
 .DS_Store
 photos-originals/
 photos-web/

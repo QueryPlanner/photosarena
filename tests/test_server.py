@@ -4,11 +4,10 @@ import base64
 import json
 import threading
 import unittest
-from http.server import ThreadingHTTPServer
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from app.server import make_handler
+from app.server import create_http_server
 
 from tests.helpers import AppFixture
 
@@ -16,9 +15,8 @@ from tests.helpers import AppFixture
 class ServerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture = AppFixture()
-        self.server = ThreadingHTTPServer(
-            ("127.0.0.1", 0), make_handler(self.fixture.settings, self.fixture.service)
-        )
+        self.server = create_http_server(self.fixture.settings, self.fixture.service)
+        self.assertEqual(self.server.server_address[0], "127.0.0.1")
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.base_url = f"http://127.0.0.1:{self.server.server_port}"

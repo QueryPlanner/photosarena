@@ -19,6 +19,7 @@ services:
     environment:
       DATABASE_PATH: /data/photosarena.sqlite3
       PHOTO_MANIFEST_PATH: /app/photo-manifest.json
+      HOST: 0.0.0.0
       PORT: "8000"
     volumes:
       - photosarena_data:/data
