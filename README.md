@@ -121,6 +121,11 @@ helper refuses port 8182 conflicts, takes an online SQLite backup before
 migration, starts the new image, checks `/healthz`, and returns to the saved
 digest if the new image fails.
 
+On a first deployment without a saved image digest, the backup command permits
+an absent database so migration can create it. If a database already exists,
+including after a failed first attempt, it is still backed up before migration.
+Updates with a saved image digest refuse to proceed if the database is missing.
+
 Add this Caddy site block and validate/reload Caddy using the host's existing
 configuration layout:
 
