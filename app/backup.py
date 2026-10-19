@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import sqlite3
 import tempfile
@@ -34,10 +35,20 @@ def backup_database(source_path: str, destination_path: str) -> Path:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--allow-missing",
+        action="store_true",
+        help="Allow an absent database only when bootstrapping the first deployment.",
+    )
+    arguments = parser.parse_args()
     source = os.environ.get("DATABASE_PATH", "/data/photosarena.sqlite3")
     destination = os.environ.get("PHOTOSARENA_BACKUP_DEST", "")
     if not destination:
         raise SystemExit("PHOTOSARENA_BACKUP_DEST is required.")
+    if arguments.allow_missing and not Path(source).exists():
+        print("First deployment has no SQLite database to back up.")
+        return
     print(f"SQLite backup created at {backup_database(source, destination)}")
 
 

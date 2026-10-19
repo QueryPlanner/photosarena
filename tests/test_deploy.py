@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -31,7 +32,13 @@ class DeployScriptTests(unittest.TestCase):
             "if [ \"$1\" = 'compose' ]; then\n"
             "  case \" $* \" in\n"
             "    *' ps -q app '*) printf '%s' \"${FAKE_COMPOSE_RUNNING:-}\"; exit 0;;\n"
-            "    *' app.backup '*) [ \"${FAKE_BACKUP_FAIL:-0}\" != '1' ]; exit $?;;\n"
+            "    *' app.backup '*)\n"
+            "      if [ \"${FAKE_REAL_BACKUP:-0}\" = '1' ]; then\n"
+            "        while [ \"$1\" != 'app.backup' ]; do shift; done\n"
+            "        shift\n"
+            "        exec \"$FAKE_PYTHON\" -m app.backup \"$@\"\n"
+            "      fi\n"
+            "      [ \"${FAKE_BACKUP_FAIL:-0}\" != '1' ]; exit $?;;\n"
             "    *' app.migrate '*) [ \"${FAKE_MIGRATE_FAIL:-0}\" != '1' ]; exit $?;;\n"
             "    *' up -d app '*) printf '%s' \"$PHOTOSARENA_IMAGE\" > \"$FAKE_ACTIVE_IMAGE\";\n"
             "      exit 0;;\n"
@@ -65,6 +72,7 @@ class DeployScriptTests(unittest.TestCase):
                 "PHOTOSARENA_HEALTH_INTERVAL": "0",
                 "FAKE_DOCKER_LOG": str(self.docker_log),
                 "FAKE_ACTIVE_IMAGE": str(self.active_image),
+                "PYTHONPATH": str(OPS.parent),
             }
         )
 
@@ -111,6 +119,42 @@ class DeployScriptTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 64)
         self.assertEqual(self.log(), [])
+
+    def test_first_deployment_accepts_absent_database_with_real_backup_command(self):
+        self.env.update(
+            FAKE_REAL_BACKUP="1",
+            FAKE_PYTHON=sys.executable,
+            DATABASE_PATH=str(self.root / "new-database.sqlite3"),
+            PHOTOSARENA_BACKUP_DEST="/data/backups/first-deployment.sqlite3",
+        )
+
+        result = self.run_deploy()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.deploy_dir / ".deployed-image").read_text().strip(),
+            IMAGE_PREFIX + "a" * 64,
+        )
+        self.assertTrue(any("app.migrate" in line for line in self.log()))
+
+    def test_update_rejects_absent_database_with_real_backup_command(self):
+        old_image = IMAGE_PREFIX + "b" * 64
+        state_file = self.deploy_dir / ".deployed-image"
+        state_file.write_text(old_image + "\n", encoding="utf-8")
+        self.env.update(
+            FAKE_REAL_BACKUP="1",
+            FAKE_PYTHON=sys.executable,
+            DATABASE_PATH=str(self.root / "missing-database.sqlite3"),
+            PHOTOSARENA_BACKUP_DEST="/data/backups/update.sqlite3",
+        )
+
+        result = self.run_deploy()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("SQLite online backup failed", result.stderr)
+        self.assertEqual(state_file.read_text().strip(), old_image)
+        self.assertFalse(any(" stop app" in line for line in self.log()))
+        self.assertFalse(any("app.migrate" in line for line in self.log()))
 
     def test_rejects_port_conflict_from_another_compose_project(self):
         self.env["FAKE_PUBLISHED"] = "blacki-web|blacki\n"

@@ -121,9 +121,13 @@ if [[ $backup_destination != /data/* ]]; then
   fail 'PHOTOSARENA_BACKUP_DEST must be under the persistent /data mount'
   exit 64
 fi
+backup_options=()
+if [[ -z $previous_image ]]; then
+  backup_options+=(--allow-missing)
+fi
 if ! compose "$new_image" run --rm --no-deps \
   -e "PHOTOSARENA_BACKUP_DEST=$backup_destination" \
-  "$COMPOSE_SERVICE" python -m app.backup; then
+  "$COMPOSE_SERVICE" python -m app.backup "${backup_options[@]}"; then
   fail 'SQLite online backup failed; the current app was left untouched'
   exit 1
 fi
